@@ -1,69 +1,49 @@
 package com.example.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
+/**
+ * The meter is designed to be read from the driver's seat, so it ships a single
+ * always-dark "cockpit" scheme instead of following the system light/dark
+ * setting: a bright panel washes out the amber LCD at night.
+ */
 private val TaxiMeterDarkColorScheme = darkColorScheme(
     primary = MeterAmber,
     onPrimary = Color(0xFF1E1600),
-    primaryContainer = Color(0xFF382900),
+    primaryContainer = MeterAmberDeep,
     onPrimaryContainer = MeterAmberBright,
     secondary = MeterGreen,
     onSecondary = Color(0xFF003822),
-    secondaryContainer = Color(0xFF005234),
+    secondaryContainer = MeterGreenDeep,
     onSecondaryContainer = MeterGreenBright,
     tertiary = MeterCyan,
+    onTertiary = Color(0xFF00293B),
+    tertiaryContainer = MeterCyanDeep,
+    onTertiaryContainer = MeterCyanBright,
     background = CockpitBackground,
     onBackground = TextPrimary,
     surface = CockpitCard,
     onSurface = TextPrimary,
     surfaceVariant = CockpitSurface,
     onSurfaceVariant = TextSecondary,
+    surfaceContainerHighest = CockpitSurface,
     outline = CockpitCardBorder,
+    outlineVariant = CockpitCardBorderSoft,
     error = MeterRed,
-    onError = Color.White
-)
-
-private val TaxiMeterLightColorScheme = lightColorScheme(
-    primary = Color(0xFFD97706),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFFEF3C7),
-    onPrimaryContainer = Color(0xFF78350F),
-    secondary = Color(0xFF059669),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD1FAE5),
-    onSecondaryContainer = Color(0xFF064E3B),
-    tertiary = Color(0xFF0284C7),
-    background = Color(0xFFF8FAFC),
-    onBackground = Color(0xFF0F172A),
-    surface = Color.White,
-    onSurface = Color(0xFF0F172A),
-    surfaceVariant = Color(0xFFF1F5F9),
-    onSurfaceVariant = Color(0xFF475569),
-    outline = Color(0xFFCBD5E1),
-    error = Color(0xFFDC2626),
-    onError = Color.White
+    onError = Color.White,
+    errorContainer = MeterRedDeep,
+    onErrorContainer = MeterRedBright,
+    scrim = Color(0xCC03060A)
 )
 
 @Composable
-fun MyApplicationTheme(
-    darkTheme: Boolean = true, // Default to cockpit dark theme for authentic taxi meter feel
-    content: @Composable () -> Unit,
-) {
-    val colorScheme = if (darkTheme) TaxiMeterDarkColorScheme else TaxiMeterLightColorScheme
-
+fun MyApplicationTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = TaxiMeterDarkColorScheme,
         typography = Typography,
         content = content
     )
 }
-

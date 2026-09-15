@@ -1,36 +1,26 @@
 package com.example.ui
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,27 +28,47 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.model.RegionPreset
 import com.example.model.TaxiFareConfig
-import com.example.ui.theme.CockpitCard
-import com.example.ui.theme.CockpitCardBorder
+import com.example.ui.components.CockpitTile
+import com.example.ui.components.MeterDialogShell
+import com.example.ui.components.MeterFilledButton
+import com.example.ui.components.MeterOutlinedButton
+import com.example.ui.components.SectionLabel
+import com.example.ui.theme.AmberButtonGradient
+import com.example.ui.theme.CockpitCardBorderSoft
 import com.example.ui.theme.CockpitSurface
 import com.example.ui.theme.MeterAmber
 import com.example.ui.theme.MeterAmberBright
+import com.example.ui.theme.MeterShapes
+import com.example.ui.theme.MeterType
+import com.example.ui.theme.OnAmberButton
+import com.example.ui.theme.Space
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.util.ShareReceiptHelper
+import java.util.Locale
 
+/** Built-in fare tables, in the order they are offered. */
+private val FARE_PRESETS = listOf(
+    TaxiFareConfig.SEOUL,
+    TaxiFareConfig.REGIONAL,
+    TaxiFareConfig.DELUXE
+)
+
+/**
+ * Fare table picker. The preset rows are rendered straight from
+ * [TaxiFareConfig], so the numbers shown here can never drift away from the
+ * ones the meter actually charges.
+ */
 @Composable
 fun FareSettingsDialog(
     currentConfig: TaxiFareConfig,
@@ -78,286 +88,220 @@ fun FareSettingsDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        MeterDialogShell(
+            title = "요금 체계 설정",
+            subtitle = "지역 프리셋 또는 직접 입력",
+            icon = Icons.Default.Tune,
+            accentColor = MeterAmber,
+            onDismiss = onDismiss,
+            closeButtonModifier = Modifier.testTag("btn_close_settings"),
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .clip(RoundedCornerShape(24.dp))
-                .border(1.5.dp, CockpitCardBorder, RoundedCornerShape(24.dp))
-                .testTag("fare_settings_dialog"),
-            color = CockpitCard
+                .padding(vertical = Space.xl)
+                .testTag("fare_settings_dialog")
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Space.xxl, vertical = Space.xl),
+                verticalArrangement = Arrangement.spacedBy(Space.md)
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = MeterAmber,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(
-                            text = "택시 요금 체계 설정",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                    }
+                SectionLabel(text = "지역 프리셋")
 
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("btn_close_settings")
-                    ) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "닫기", tint = TextSecondary)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Text(
-                    text = "지역별 기본 요금 체계",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextSecondary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Presets list
-                val presets = listOf(
-                    RegionPreset.SEOUL to "기본 4,800원 / 1.6km (131m당 100원, 30초당 100원)",
-                    RegionPreset.REGIONAL to "기본 4,000원 / 2.0km (132m당 100원, 31초당 100원)",
-                    RegionPreset.DELUXE to "기본 7,000원 / 3.0km (151m당 200원, 36초당 200원)"
-                )
-
-                presets.forEach { (preset, desc) ->
-                    val isSelected = !isCustomMode && currentConfig.preset == preset
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                isCustomMode = false
-                                onSelectPreset(preset)
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) MeterAmber.copy(alpha = 0.15f) else CockpitSurface,
-                        border = BorderStroke(1.dp, if (isSelected) MeterAmber else CockpitCardBorder)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = {
-                                    isCustomMode = false
-                                    onSelectPreset(preset)
-                                },
-                                colors = RadioButtonDefaults.colors(selectedColor = MeterAmber)
-                            )
-                            Column(modifier = Modifier.padding(start = 8.dp)) {
-                                Text(
-                                    text = preset.displayName,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) MeterAmberBright else TextPrimary
-                                )
-                                Text(
-                                    text = desc,
-                                    fontSize = 11.sp,
-                                    color = TextMuted
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Custom option
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable { isCustomMode = true },
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isCustomMode) MeterAmber.copy(alpha = 0.15f) else CockpitSurface,
-                    border = BorderStroke(1.dp, if (isCustomMode) MeterAmber else CockpitCardBorder)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = isCustomMode,
-                            onClick = { isCustomMode = true },
-                            colors = RadioButtonDefaults.colors(selectedColor = MeterAmber)
-                        )
-                        Column(modifier = Modifier.padding(start = 8.dp)) {
-                            Text(
-                                text = "사용자 직접 입력 (커스텀)",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isCustomMode) MeterAmberBright else TextPrimary
-                            )
-                            Text(
-                                text = "기본요금, 거리요금, 지체시간요금을 직접 변경",
-                                fontSize = 11.sp,
-                                color = TextMuted
-                            )
-                        }
-                    }
-                }
-
-                // Custom editable inputs
-                if (isCustomMode) {
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        text = "커스텀 요금 상세 설정",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MeterAmberBright
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = baseFareStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) baseFareStr = it },
-                            label = { Text("기본 요금(원)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = baseDistanceStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) baseDistanceStr = it },
-                            label = { Text("기본 거리(m)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = distUnitMetersStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) distUnitMetersStr = it },
-                            label = { Text("거리 단위(m)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = distUnitFareStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) distUnitFareStr = it },
-                            label = { Text("단위 요금(원)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = timeUnitSecStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) timeUnitSecStr = it },
-                            label = { Text("시간 단위(초)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = timeUnitFareStr,
-                            onValueChange = { if (it.all { ch -> ch.isDigit() }) timeUnitFareStr = it },
-                            label = { Text("시간 요금(원)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MeterAmber,
-                                unfocusedBorderColor = CockpitCardBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Button(
+                FARE_PRESETS.forEach { preset ->
+                    PresetRow(
+                        title = preset.preset.displayName,
+                        summary = "기본 ${ShareReceiptHelper.formatWon(preset.baseFare)} · " +
+                            "${String.format(Locale.KOREA, "%.1f", preset.baseDistanceMeters / 1000.0)} km",
+                        detail = "${preset.distanceUnitMeters}m / ${preset.distanceUnitFare}원\n" +
+                            "${preset.timeUnitSeconds}초 / ${preset.timeUnitFare}원",
+                        selected = !isCustomMode && currentConfig.preset == preset.preset,
                         onClick = {
-                            val newConfig = TaxiFareConfig(
-                                preset = RegionPreset.CUSTOM,
-                                baseFare = baseFareStr.toIntOrNull() ?: 4800,
-                                baseDistanceMeters = baseDistanceStr.toIntOrNull() ?: 1600,
-                                distanceUnitMeters = distUnitMetersStr.toIntOrNull() ?: 131,
-                                distanceUnitFare = distUnitFareStr.toIntOrNull() ?: 100,
-                                timeUnitSeconds = timeUnitSecStr.toIntOrNull() ?: 30,
-                                timeUnitFare = timeUnitFareStr.toIntOrNull() ?: 100,
-                                slowSpeedKmhThreshold = 15.0,
-                                nightSurchargePercent = currentConfig.nightSurchargePercent,
-                                outOfCitySurchargePercent = currentConfig.outOfCitySurchargePercent
-                            )
-                            onSaveCustomConfig(newConfig)
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MeterAmber)
+                            isCustomMode = false
+                            onSelectPreset(preset.preset)
+                        }
+                    )
+                }
+
+                PresetRow(
+                    title = "사용자 지정",
+                    summary = "기본 · 거리 · 시간 요금을 직접 입력",
+                    detail = null,
+                    selected = isCustomMode,
+                    onClick = { isCustomMode = true }
+                )
+
+                AnimatedVisibility(visible = isCustomMode) {
+                    Column(
+                        modifier = Modifier.padding(top = Space.md),
+                        verticalArrangement = Arrangement.spacedBy(Space.md)
                     ) {
-                        Text("사용자 정의 요금 저장", color = Color.Black, fontWeight = FontWeight.Bold)
+                        SectionLabel(text = "커스텀 요금", color = MeterAmberBright)
+
+                        FareInputRow(
+                            firstValue = baseFareStr,
+                            onFirstChange = { baseFareStr = it },
+                            firstLabel = "기본 요금(원)",
+                            secondValue = baseDistanceStr,
+                            onSecondChange = { baseDistanceStr = it },
+                            secondLabel = "기본 거리(m)"
+                        )
+                        FareInputRow(
+                            firstValue = distUnitMetersStr,
+                            onFirstChange = { distUnitMetersStr = it },
+                            firstLabel = "거리 단위(m)",
+                            secondValue = distUnitFareStr,
+                            onSecondChange = { distUnitFareStr = it },
+                            secondLabel = "단위 요금(원)"
+                        )
+                        FareInputRow(
+                            firstValue = timeUnitSecStr,
+                            onFirstChange = { timeUnitSecStr = it },
+                            firstLabel = "시간 단위(초)",
+                            secondValue = timeUnitFareStr,
+                            onSecondChange = { timeUnitFareStr = it },
+                            secondLabel = "시간 요금(원)"
+                        )
+
+                        MeterFilledButton(
+                            label = "커스텀 요금 저장",
+                            icon = Icons.Default.Check,
+                            gradient = AmberButtonGradient,
+                            contentColor = OnAmberButton,
+                            onClick = {
+                                onSaveCustomConfig(
+                                    TaxiFareConfig(
+                                        preset = RegionPreset.CUSTOM,
+                                        baseFare = baseFareStr.toIntOrNull() ?: 4800,
+                                        baseDistanceMeters = baseDistanceStr.toIntOrNull() ?: 1600,
+                                        distanceUnitMeters = distUnitMetersStr.toIntOrNull() ?: 131,
+                                        distanceUnitFare = distUnitFareStr.toIntOrNull() ?: 100,
+                                        timeUnitSeconds = timeUnitSecStr.toIntOrNull() ?: 30,
+                                        timeUnitFare = timeUnitFareStr.toIntOrNull() ?: 100,
+                                        slowSpeedKmhThreshold = currentConfig.slowSpeedKmhThreshold,
+                                        nightSurchargePercent = currentConfig.nightSurchargePercent,
+                                        outOfCitySurchargePercent =
+                                            currentConfig.outOfCitySurchargePercent
+                                    )
+                                )
+                                onDismiss()
+                            }
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Space.xs))
 
-                TextButton(
+                MeterOutlinedButton(
+                    label = "확인",
+                    icon = null,
                     onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("확인 및 닫기", color = MeterAmber)
-                }
+                    contentColor = MeterAmberBright,
+                    borderColor = MeterAmber.copy(alpha = 0.5f)
+                )
             }
         }
     }
+}
+
+@Composable
+private fun PresetRow(
+    title: String,
+    summary: String,
+    detail: String?,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    CockpitTile(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+        containerColor = if (selected) MeterAmber.copy(alpha = 0.14f) else CockpitSurface,
+        borderColor = if (selected) MeterAmber.copy(alpha = 0.7f) else CockpitCardBorderSoft,
+        contentPadding = PaddingValues(horizontal = Space.lg, vertical = Space.lg)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selected,
+                onClick = null,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = MeterAmber,
+                    unselectedColor = TextMuted
+                )
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = Space.md)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (selected) MeterAmberBright else TextPrimary
+                )
+                Spacer(modifier = Modifier.height(Space.xxs))
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextMuted
+                )
+            }
+
+            if (detail != null) {
+                Text(
+                    text = detail,
+                    style = MeterType.amount,
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FareInputRow(
+    firstValue: String,
+    onFirstChange: (String) -> Unit,
+    firstLabel: String,
+    secondValue: String,
+    onSecondChange: (String) -> Unit,
+    secondLabel: String
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Space.md)) {
+        FareNumberField(
+            value = firstValue,
+            onValueChange = onFirstChange,
+            label = firstLabel,
+            modifier = Modifier.weight(1f)
+        )
+        FareNumberField(
+            value = secondValue,
+            onValueChange = onSecondChange,
+            label = secondLabel,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun FareNumberField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { input -> if (input.all { it.isDigit() }) onValueChange(input) },
+        label = {
+            Text(text = label, style = MaterialTheme.typography.labelSmall)
+        },
+        singleLine = true,
+        shape = MeterShapes.tile,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        colors = meterTextFieldColors(MeterAmber),
+        modifier = modifier
+    )
 }
