@@ -1,0 +1,6 @@
+{
+  "name": "택시 미터기",
+  "description": "실시간 거리·시간 요금 계산, 할증/통행료 설정, SNS 영수증 공유 및 더치페이 정산 기능을 갖춘 스마트 택시 미터기",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

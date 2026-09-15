@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Taxi Roof Lamp -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M44,25h20c2.2,0 4,1.8 4,4v2c0,1.1 -0.9,2 -2,2H42c-1.1,0 -2,-0.9 -2,-2v-2C40,26.8 41.8,25 44,25z" />
+    <path
+        android:fillColor="#111827"
+        android:pathData="M49,27h10v3h-10z" />
+    
+    <!-- Meter Box Outer Frame -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M27,33h54c3.3,0 6,2.7 6,6v38c0,3.3 -2.7,6 -6,6H27c-3.3,0 -6,-2.7 -6,-6V39C21,35.7 23.7,33 27,33z" />
+    
+    <!-- Meter Box Bezel / Inner screen -->
+    <path
+        android:fillColor="#0A0F1D"
+        android:pathData="M27,37h54c1.1,0 2,0.9 2,2v30c0,1.1 -0.9,2 -2,2H27c-1.1,0 -2,-0.9 -2,-2V39C25,37.9 25.9,37 27,37z" />
+
+    <!-- Status Indicator: 빈차 (Red dot) -->
+    <path
+        android:fillColor="#EF4444"
+        android:pathData="M30,42h8c1.1,0 2,0.9 2,2v4c0,1.1 -0.9,2 -2,2h-8c-1.1,0 -2,-0.9 -2,-2v-4C28,42.9 28.9,42 30,42z" />
+
+    <!-- Won Currency ₩ Symbol (Amber Gold) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M47,44l2.5,12h2.5l2.5,-12h-2.2l-1.5,8.2l-1.6,-8.2h-2l-1.6,8.2l-1.5,-8.2H42l2.5,12h2.5z" />
+    <!-- Won cross bars -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M42,49h17v1.8H42z M42,52.5h17v1.8H42z" />
+
+    <!-- Digital Fare Display Segments -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M63,44h16c1.1,0 2,0.9 2,2v10c0,1.1 -0.9,2 -2,2H63c-1.1,0 -2,-0.9 -2,-2V46C61,44.9 61.9,44 63,44z" />
+
+    <!-- Bottom Meter Speed/Distance LEDs -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M30,62h12v3H30z" />
+    <path
+        android:fillColor="#06B6D4"
+        android:pathData="M46,62h16v3H46z" />
+    <path
+        android:fillColor="#8B5CF6"
+        android:pathData="M66,62h14v3H66z" />
+
+    <!-- Hardware Control Buttons at base -->
+    <path
+        android:fillColor="#334155"
+        android:pathData="M31,74h12c0.6,0 1,0.4 1,1v2c0,0.6 -0.4,1 -1,1H31c-0.6,0 -1,-0.4 -1,-1v-2C30,74.4 30.4,74 31,74z" />
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M48,74h12c0.6,0 1,0.4 1,1v2c0,0.6 -0.4,1 -1,1H48c-0.6,0 -1,-0.4 -1,-1v-2C47,74.4 47.4,74 48,74z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M65,74h12c0.6,0 1,0.4 1,1v2c0,0.6 -0.4,1 -1,1H65c-0.6,0 -1,-0.4 -1,-1v-2C64,74.4 64.4,74 65,74z" />
+</vector>
