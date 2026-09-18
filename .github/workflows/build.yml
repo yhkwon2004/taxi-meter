@@ -1,0 +1,91 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Assemble & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # The action's default package list includes the obsolete "tools"
+          # package, which Google removed from the SDK repo — sdkmanager exits 1
+          # on it. Install nothing here and let AGP pull the platform and
+          # build-tools it needs (the runner image already ships platform-tools).
+          packages: ''
+
+      - name: Generate debug keystore
+        # app/build.gradle.kts signs debug builds with ${rootDir}/debug.keystore,
+        # which is gitignored. Recreate it here with the standard debug
+        # credentials the build file expects.
+        run: |
+          keytool -genkeypair -v \
+            -keystore debug.keystore \
+            -storepass android -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Set up Gradle
+        # The repo has no gradlew script or wrapper jar, only
+        # gradle/wrapper/gradle-wrapper.properties — so pin the same version here.
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Assemble debug APK
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Unit tests
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: gradle :app:lintDebug --stacktrace
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: app/build/reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload recorded screenshots
+        # Roborazzi writes app/src/test/screenshots/*.png during the unit test
+        # run. Pull them out so a UI change can be eyeballed from the PR.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: app/src/test/screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
