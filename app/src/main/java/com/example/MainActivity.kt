@@ -8,15 +8,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,28 +22,20 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.GpsFixed
-import androidx.compose.material.icons.filled.GpsNotFixed
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,34 +46,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.model.CurrentMeterState
 import com.example.model.MeterStatus
 import com.example.ui.FareSettingsDialog
 import com.example.ui.ReceiptShareDialog
+import com.example.ui.TaxiMeterActionBar
 import com.example.ui.TaxiMeterControls
 import com.example.ui.TaxiMeterDisplay
 import com.example.ui.TripHistoryDialog
 import com.example.ui.theme.CockpitBackground
-import com.example.ui.theme.CockpitCard
-import com.example.ui.theme.CockpitCardBorder
-import com.example.ui.theme.CockpitSurface
+import com.example.ui.theme.CockpitBackgroundTop
+import com.example.ui.theme.CockpitCardBorderSoft
 import com.example.ui.theme.MeterAmber
-import com.example.ui.theme.MeterAmberBright
-import com.example.ui.theme.MeterCyan
-import com.example.ui.theme.MeterGreen
-import com.example.ui.theme.MeterGreenBright
+import com.example.ui.theme.MeterCyanBright
+import com.example.ui.theme.MeterShapes
+import com.example.ui.theme.MeterSizes
 import com.example.ui.theme.MyApplicationTheme
+import com.example.ui.theme.Space
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.viewmodel.TaxiMeterViewModel
 
 class MainActivity : ComponentActivity() {
@@ -98,7 +89,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaxiMeterApp(viewModel: TaxiMeterViewModel = viewModel()) {
     val context = LocalContext.current
@@ -158,126 +148,80 @@ fun TaxiMeterApp(viewModel: TaxiMeterViewModel = viewModel()) {
         }
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = CockpitBackground,
-        contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "🚕 택시 미터기",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Black,
-                            color = TextPrimary
-                        )
-
-                        // GPS / Simulation Pill Badge
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (meterState.isSimulationMode) MeterCyan.copy(alpha = 0.2f) else MeterGreen.copy(alpha = 0.2f),
-                            border = BorderStroke(1.dp, if (meterState.isSimulationMode) MeterCyan else MeterGreen)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(if (meterState.isSimulationMode) MeterCyan else MeterGreenBright)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (meterState.isSimulationMode) "모의주행" else "GPS",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (meterState.isSimulationMode) MeterCyan else MeterGreenBright
-                                )
-                            }
-                        }
-                    }
-                },
-                actions = {
-                    // History button with count badge
-                    IconButton(
-                        onClick = { showHistoryDialog = true },
-                        modifier = Modifier.testTag("top_bar_history")
-                    ) {
-                        BadgedBox(
-                            badge = {
-                                if (tripHistory.isNotEmpty()) {
-                                    Badge(
-                                        containerColor = MeterAmber,
-                                        contentColor = Color.Black
-                                    ) {
-                                        Text(
-                                            text = tripHistory.size.toString(),
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.History,
-                                contentDescription = "운행 기록",
-                                tint = TextPrimary
-                            )
-                        }
-                    }
-
-                    // Rate Settings button
-                    IconButton(
-                        onClick = { showSettingsDialog = true },
-                        modifier = Modifier.testTag("top_bar_settings")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "요금 설정",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CockpitBackground
+    // The cockpit sits on a vertical gradient: slightly lit at the windscreen
+    // end, falling away to near-black at the bottom of the panel.
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    0f to CockpitBackgroundTop,
+                    0.45f to CockpitBackground,
+                    1f to CockpitBackground
                 )
             )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Main Meter Cockpit Display
-            TaxiMeterDisplay(meterState = meterState)
+    ) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets.safeDrawing,
+            topBar = {
+                MeterTopBar(
+                    meterState = meterState,
+                    tripCount = tripHistory.size,
+                    onOpenHistory = { showHistoryDialog = true },
+                    onOpenSettings = { showSettingsDialog = true }
+                )
+            },
+            bottomBar = {
+                // Driving actions stay pinned within thumb reach instead of
+                // drifting with the scroll position.
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(MeterSizes.hairline)
+                            .background(CockpitCardBorderSoft)
+                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(CockpitBackground)
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(horizontal = Space.xl, vertical = Space.lg)
+                    ) {
+                        TaxiMeterActionBar(
+                            meterState = meterState,
+                            onStartRide = { viewModel.startRide() },
+                            onPauseRide = { viewModel.pauseRide() },
+                            onResumeRide = { viewModel.resumeRide() },
+                            onEndRide = { viewModel.endRide() },
+                            onResetToVacant = { viewModel.resetToVacant() },
+                            onOpenReceipt = { showReceiptDialog = true }
+                        )
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Space.xl, vertical = Space.xl),
+                verticalArrangement = Arrangement.spacedBy(Space.lg)
+            ) {
+                TaxiMeterDisplay(meterState = meterState)
 
-            // Tactile Controls & Surcharges
-            TaxiMeterControls(
-                meterState = meterState,
-                onStartRide = { viewModel.startRide() },
-                onPauseRide = { viewModel.pauseRide() },
-                onResumeRide = { viewModel.resumeRide() },
-                onEndRide = { viewModel.endRide() },
-                onResetToVacant = { viewModel.resetToVacant() },
-                onToggleNightSurcharge = { viewModel.toggleNightSurcharge() },
-                onToggleOutOfCity = { viewModel.toggleOutOfCitySurcharge() },
-                onAddTollFee = { amount -> viewModel.addTollFee(amount) },
-                onToggleSimulation = { enabled -> viewModel.setSimulationMode(enabled) },
-                onSetSimulationSpeed = { speed -> viewModel.setSimulationSpeed(speed) },
-                onOpenReceipt = { showReceiptDialog = true }
-            )
+                TaxiMeterControls(
+                    meterState = meterState,
+                    onToggleNightSurcharge = { viewModel.toggleNightSurcharge() },
+                    onToggleOutOfCity = { viewModel.toggleOutOfCitySurcharge() },
+                    onAddTollFee = { amount -> viewModel.addTollFee(amount) },
+                    onToggleSimulation = { enabled -> viewModel.setSimulationMode(enabled) },
+                    onSetSimulationSpeed = { speed -> viewModel.setSimulationSpeed(speed) }
+                )
+            }
         }
     }
 
@@ -317,6 +261,113 @@ fun TaxiMeterApp(viewModel: TaxiMeterViewModel = viewModel()) {
             onSelectPreset = { viewModel.setPreset(it) },
             onSaveCustomConfig = { viewModel.updateCustomConfig(it) },
             onDismiss = { showSettingsDialog = false }
+        )
+    }
+}
+
+/**
+ * Header: identity on the left, and directly under it the one thing a driver
+ * needs to trust the reading — where the distance is coming from.
+ */
+@Composable
+private fun MeterTopBar(
+    meterState: CurrentMeterState,
+    tripCount: Int,
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = Space.xl, end = Space.md, top = Space.md, bottom = Space.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(MeterShapes.chip)
+                    .background(MeterAmber.copy(alpha = 0.14f))
+                    .border(MeterSizes.hairline, MeterAmber.copy(alpha = 0.35f), MeterShapes.chip),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🚕", fontSize = 17.sp)
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = Space.lg)
+            ) {
+                Text(
+                    text = "택시 미터기",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (meterState.isSimulationMode) {
+                        "모의 주행 모드"
+                    } else {
+                        meterState.gpsProviderStatus
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (meterState.isSimulationMode) MeterCyanBright else TextMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            IconButton(
+                onClick = onOpenHistory,
+                modifier = Modifier.testTag("top_bar_history")
+            ) {
+                BadgedBox(
+                    badge = {
+                        if (tripCount > 0) {
+                            Badge(
+                                containerColor = MeterAmber,
+                                contentColor = Color.Black
+                            ) {
+                                Text(
+                                    text = tripCount.toString(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = "운행 기록",
+                        tint = TextPrimary
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.testTag("top_bar_settings")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = "요금 설정",
+                    tint = TextPrimary
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(MeterSizes.hairline)
+                .background(CockpitCardBorderSoft)
         )
     }
 }
