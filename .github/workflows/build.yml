@@ -27,6 +27,12 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default package list includes the obsolete "tools"
+          # package, which Google removed from the SDK repo — sdkmanager exits 1
+          # on it. Install nothing here and let AGP pull the platform and
+          # build-tools it needs (the runner image already ships platform-tools).
+          packages: ''
 
       - name: Generate debug keystore
         # app/build.gradle.kts signs debug builds with ${rootDir}/debug.keystore,
